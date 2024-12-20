@@ -14,9 +14,30 @@ import {
     BarChart2
 } from 'lucide-react';
 
-const RateLimitIndicator = ({ apiName, usageData, className = "" }) => {
-    const [status, setStatus] = useState('normal');
-    const [timeToReset, setTimeToReset] = useState(null);
+type StatusType = 'normal' | 'warning' | 'critical';
+
+interface UsageData {
+    minute_usage: {
+        current: number;
+        limit: number;
+        remaining: number;
+    };
+    daily_usage: {
+        current: number;
+        limit: number;
+        remaining: number;
+    };
+}
+
+interface RateLimitIndicatorProps {
+    apiName: string;
+    usageData: UsageData;
+    className?: string;
+}
+
+const RateLimitIndicator = ({ apiName, usageData, className = "" }: RateLimitIndicatorProps) => {
+    const [status, setStatus] = useState<StatusType>('normal');
+    const [timeToReset, setTimeToReset] = useState<number | null>(null);
 
     useEffect(() => {
         if (!usageData) return;
@@ -39,7 +60,7 @@ const RateLimitIndicator = ({ apiName, usageData, className = "" }) => {
         setTimeToReset(secondsToNextMinute);
     }, [usageData]);
 
-    const getStatusColor = (status) => {
+    const getStatusColor = (status: StatusType) => {
         switch (status) {
             case 'critical':
                 return 'text-red-500 bg-red-50';
@@ -50,7 +71,7 @@ const RateLimitIndicator = ({ apiName, usageData, className = "" }) => {
         }
     };
 
-    const getStatusIcon = (status) => {
+    const getStatusIcon = (status: StatusType) => {
         switch (status) {
             case 'critical':
                 return <ShieldAlert className="w-5 h-5" />;
@@ -104,11 +125,11 @@ const RateLimitIndicator = ({ apiName, usageData, className = "" }) => {
                         <Progress
                             value={minutePercent}
                             className="h-2"
-                            indicatorClassName={
-                                minutePercent >= 90 ? 'bg-red-500' :
-                                    minutePercent >= 75 ? 'bg-yellow-500' :
-                                        'bg-green-500'
-                            }
+                            // indicatorClassName={
+                            //     minutePercent >= 90 ? 'bg-red-500' :
+                            //         minutePercent >= 75 ? 'bg-yellow-500' :
+                            //             'bg-green-500'
+                            // }
                         />
                     </div>
 
@@ -126,11 +147,11 @@ const RateLimitIndicator = ({ apiName, usageData, className = "" }) => {
                         <Progress
                             value={dailyPercent}
                             className="h-2"
-                            indicatorClassName={
-                                dailyPercent >= 90 ? 'bg-red-500' :
-                                    dailyPercent >= 75 ? 'bg-yellow-500' :
-                                        'bg-green-500'
-                            }
+                            // indicatorClassName={
+                            //     dailyPercent >= 90 ? 'bg-red-500' :
+                            //         dailyPercent >= 75 ? 'bg-yellow-500' :
+                            //             'bg-green-500'
+                            // }
                         />
                     </div>
 
@@ -145,7 +166,7 @@ const RateLimitIndicator = ({ apiName, usageData, className = "" }) => {
                     )}
 
                     {status === 'warning' && (
-                        <Alert variant="warning" className="mt-2">
+                        <Alert variant="default" className="mt-2 border-yellow-500 text-yellow-700 bg-yellow-50">
                             <AlertTriangle className="w-4 h-4" />
                             <AlertDescription>
                                 Approaching rate limit threshold. Consider reducing request frequency.

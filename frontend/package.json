@@ -6,6 +6,7 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
+    "start-be": "cd ../backend && python -m uvicorn app.main:app --reload",
     "lint": "next lint"
   },
   "dependencies": {

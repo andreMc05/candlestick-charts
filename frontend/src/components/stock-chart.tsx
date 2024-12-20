@@ -8,42 +8,106 @@ import {
     Tooltip,
     Legend,
     ResponsiveContainer,
-    Bar
+    Bar,
+    Line
 } from 'recharts';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Search, TrendingUp, TrendingDown } from 'lucide-react';
 
+interface StockData {
+    prices: PriceData[];
+    change_percent: number;
+    current_price: number;
+    market_cap?: number;
+    pe_ratio?: number;
+}
+
+interface PriceData {
+    timestamp: string;
+    open: number;
+    high: number;
+    low: number;
+    close: number;
+    volume: number;
+    sma_20?: number;
+    upper_band?: number;
+    lower_band?: number;
+}
+
+interface CustomTooltipProps {
+    active?: boolean;
+    payload?: any[];
+    label?: string;
+}
+
+const CustomTooltip = ({ active, payload, label }: CustomTooltipProps) => {
+    if (active && payload && payload.length) {
+        return (
+            <div className="bg-white p-3 border rounded shadow-lg">
+                <p className="font-bold">{label ? new Date(label).toLocaleDateString() : ''}</p>
+                <p className="text-[var(--chart-1)]">Open: ${payload[0].payload.open?.toFixed(2)}</p>
+                <p className="text-[var(--chart-2)]">Close: ${payload[0].payload.close?.toFixed(2)}</p>
+                <p className="text-[var(--chart-3)]">High: ${payload[0].payload.high?.toFixed(2)}</p>
+                <p className="text-[var(--chart-4)]">Low: ${payload[0].payload.low?.toFixed(2)}</p>
+                <p className="text-[var(--chart-5)]">Volume: {payload[0].payload.volume?.toLocaleString()}</p>
+            </div>
+        );
+    }
+    return null;
+};
+
 const CandlestickChart = () => {
     const [symbol, setSymbol] = useState('AAPL');
     const [period, setPeriod] = useState('1mo');
-    const [stockData, setStockData] = useState(null);
+    const [stockData, setStockData] = useState<StockData | null>(null);
     const [loading, setLoading] = useState(false);
-    const [error, setError] = useState(null);
+    const [error, setError] = useState<string | null>(null);
 
-    const fetchStockData = async () => {
+    const fetchStockData = async (): Promise<void> => {
         try {
             setLoading(true);
             setError(null);
             const response = await fetch(`http://localhost:8000/api/stock/${symbol}?period=${period}`);
             if (!response.ok) throw new Error('Failed to fetch stock data');
             const data = await response.json();
-            setStockData(data);
-        } catch (err) {
-            setError(err.message);
+            if (isValidStockData(data)) {
+                setStockData(data);
+            } else {
+                throw new Error('Invalid data format received from API');
+            }
+        } catch (err: unknown) {
+            setError(err instanceof Error ? err.message : 'An unknown error occurred');
         } finally {
             setLoading(false);
         }
+    };
+
+    const isValidStockData = (data: any): data is StockData => {
+        return (
+            data &&
+            Array.isArray(data.prices) &&
+            typeof data.change_percent === 'number' &&
+            typeof data.current_price === 'number' &&
+            data.prices.every((price: any) => (
+                typeof price.timestamp === 'string' &&
+                typeof price.open === 'number' &&
+                typeof price.high === 'number' &&
+                typeof price.low === 'number' &&
+                typeof price.close === 'number' &&
+                typeof price.volume === 'number'
+            ))
+        );
     };
 
     useEffect(() => {
         fetchStockData();
     }, []);
 
-    const formatPrice = (value) => `$${value.toFixed(2)}`;
+    const formatPrice = (value: number): string => `$${value.toFixed(2)}`;
 
-    const renderStockInfo = () => {
+    const renderStockInfo = (): React.ReactNode => {
         if (!stockData) return null;
 
         const changeColor = stockData.change_percent >= 0 ? 'text-green-500' : 'text-red-500';
@@ -134,52 +198,85 @@ const CandlestickChart = () => {
                                         tickFormatter={(value) => new Date(value).toLocaleDateString()}
                                     />
                                     <YAxis
+                                        yAxisId="price"
                                         domain={['auto', 'auto']}
-                                        tickFormatter={formatPrice}
+                                        tickFormatter={(value) => `$${value.toFixed(2)}`}
                                     />
-                                    <Tooltip
-                                        formatter={(value, name) => [formatPrice(value), name]}
-                                        labelFormatter={(label) => new Date(label).toLocaleDateString()}
+                                    <YAxis
+                                        yAxisId="volume"
+                                        orientation="right"
+                                        tickFormatter={(value) => `${(value / 1000000).toFixed(0)}M`}
                                     />
+                                    <Tooltip content={<CustomTooltip active={false} payload={[]} label="" />} />
                                     <Legend />
-                                    <Area
+                                    
+                                    <Line
+                                        type="monotone"
+                                        dataKey="high"
+                                        stroke="var(--chart-3)"
+                                        dot={false}
+                                        yAxisId="price" 
+                                        name="High"
+                                    />
+                                    <Line
+                                        type="monotone"
+                                        dataKey="low"
+                                        stroke="var(--chart-4)"
+                                        dot={false}
+                                        yAxisId="price"
+                                        name="Low"
+                                    />
+                                    <Line
+                                        type="monotone"
+                                        dataKey="open"
+                                        stroke="var(--chart-1)"
+                                        dot={false}
+                                        yAxisId="price"
+                                        name="Open"
+                                    />
+                                    <Line
                                         type="monotone"
                                         dataKey="close"
-                                        fill="#8884d8"
-                                        stroke="#8884d8"
-                                        fillOpacity={0.1}
-                                        name="Close Price"
+                                        stroke="var(--chart-2)"
+                                        dot={false}
+                                        yAxisId="price"
+                                        name="Close"
                                     />
+
                                     <Bar
                                         dataKey="volume"
-                                        fill="#82ca9d"
-                                        opacity={0.5}
-                                        yAxisId={1}
+                                        fill="var(--chart-5)"
+                                        opacity={0.3}
+                                        yAxisId="volume"
                                         name="Volume"
                                     />
-                                    {stockData.prices[0].sma_20 && (
-                                        <Area
+
+                                    {stockData.prices[0]?.sma_20 && (
+                                        <Line
                                             type="monotone"
                                             dataKey="sma_20"
                                             stroke="#ff7300"
-                                            fill="none"
+                                            dot={false}
+                                            yAxisId="price"
                                             name="SMA 20"
                                         />
                                     )}
-                                    {stockData.prices[0].upper_band && (
+                                    {stockData.prices[0]?.upper_band && (
                                         <>
-                                            <Area
+                                            <Line
                                                 type="monotone"
                                                 dataKey="upper_band"
                                                 stroke="#82ca9d"
-                                                fill="none"
+                                                dot={false}
+                                                yAxisId="price"
                                                 name="Upper Band"
                                             />
-                                            <Area
+                                            <Line
                                                 type="monotone"
                                                 dataKey="lower_band"
                                                 stroke="#82ca9d"
-                                                fill="none"
+                                                dot={false}
+                                                yAxisId="price"
                                                 name="Lower Band"
                                             />
                                         </>

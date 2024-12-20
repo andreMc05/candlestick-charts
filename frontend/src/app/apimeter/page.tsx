@@ -73,7 +73,7 @@ const RateLimitIndicator = ({ apiName, usageData, className = "" }: RateLimitInd
         }
     };
 
-    const getStatusIcon = (status) => {
+    const getStatusIcon = (status: StatusType) => {
         switch (status) {
             case 'critical':
                 return <ShieldAlert className="w-5 h-5" />;
@@ -127,11 +127,11 @@ const RateLimitIndicator = ({ apiName, usageData, className = "" }: RateLimitInd
                         <Progress
                             value={minutePercent}
                             className="h-2"
-                            indicatorClassName={
-                                minutePercent >= 90 ? 'bg-red-500' :
-                                    minutePercent >= 75 ? 'bg-yellow-500' :
-                                        'bg-green-500'
-                            }
+                            // indicatorClassName={
+                            //     minutePercent >= 90 ? 'bg-red-500' :
+                            //         minutePercent >= 75 ? 'bg-yellow-500' :
+                            //             'bg-green-500'
+                            // }
                         />
                     </div>
 
@@ -149,11 +149,11 @@ const RateLimitIndicator = ({ apiName, usageData, className = "" }: RateLimitInd
                         <Progress
                             value={dailyPercent}
                             className="h-2"
-                            indicatorClassName={
-                                dailyPercent >= 90 ? 'bg-red-500' :
-                                    dailyPercent >= 75 ? 'bg-yellow-500' :
-                                        'bg-green-500'
-                            }
+                            // indicatorClassName={
+                            //     dailyPercent >= 90 ? 'bg-red-500' :
+                            //         dailyPercent >= 75 ? 'bg-yellow-500' :
+                            //             'bg-green-500'
+                            // }
                         />
                     </div>
 
@@ -226,4 +226,4 @@ const APIMetricsDashboard = () => {
     );
 };
 
-export default APIMeter;
+export default APIMetricsDashboard;
